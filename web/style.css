@@ -24,22 +24,22 @@
     width: 200px;
 }
 
-#light1 {
+/* #light1 {
     top: 140px;
     left: 570px;
-}
+} */
 
-#light2 {
+#light1 {
     top: 470px;
     left: 570px;
 }
 
-#light3 {
+#light2 {
     top: 170px;
     left: 1200px;
 }
 
-#light4 {
+#light3 {
     top: 500px;
     left: 1200px;
 }
