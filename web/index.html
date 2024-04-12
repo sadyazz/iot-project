@@ -1,111 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js"></script>
-    <!--<script src="script.js"></script>-->
     <link rel="stylesheet" href="style.css">
-    
+
     <title>IoT Home Automation System</title>
 </head>
 
 <body>
-   <div class="house-layout">
+    <div class="house-layout">
         <img class="layout" src="img\house_layout.jpg" alt="Layout kuće">
 
-        <!-- <img id="light1" class="light" src="img/light-off.png" onclick="promijeniSvjetlo('light1')"/> -->
-        <img id="light1" class="light" src="img/light-off.png" onclick="promijeniSvjetlo('light1')"/>
-        <img id="light2" class="light" src="img/light-off.png" onclick="promijeniSvjetlo('light2')"/>
-        <img id="light3" class="light" src="img/light-off.png" onclick="promijeniSvjetlo('light3')"/>
+
+        <img id="gas_img" src="img/excl.png">
+        <img id="light1" class="light" src="img/light-off.png" />
+        <img id="light2" class="light" src="img/light-off.png" />
+        <img id="light3" class="light" src="img/light-off.png" />
     </div>
 
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-      
+
         const firebaseConfig = {
-          apiKey: "AIzaSyA9lwJRqCEm7hWQAQf-ShCu0h6HgwAxqtA",
-          authDomain: "iot-project-5bbf5.firebaseapp.com",
-          databaseURL: "https://iot-project-5bbf5-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "iot-project-5bbf5",
-          storageBucket: "iot-project-5bbf5.appspot.com",
-          messagingSenderId: "52266446999",
-          appId: "1:52266446999:web:d6b1ec297a5f89c4d279d2"
+            apiKey: "AIzaSyA9lwJRqCEm7hWQAQf-ShCu0h6HgwAxqtA",
+            authDomain: "iot-project-5bbf5.firebaseapp.com",
+            databaseURL: "https://iot-project-5bbf5-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "iot-project-5bbf5",
+            storageBucket: "iot-project-5bbf5.appspot.com",
+            messagingSenderId: "52266446999",
+            appId: "1:52266446999:web:d6b1ec297a5f89c4d279d2"
         };
-      
+
         const app = initializeApp(firebaseConfig);
 
-        import {getDatabase, ref, set, get, child, update, remove}
-        from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+        import { getDatabase, ref, set, get, child, update, remove }
+            from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
 
-        const db = getDatabase(); 
+        const db = getDatabase();
         const dbRef = ref(db);
 
-        function Load(){
+        function Load() {
             var ledStatus = false;
 
-//ldr led
-get(child(dbRef,"test/led3")).then((snapshot)=> {
-    if (snapshot.exists()) {
-        ledStatus = snapshot.val();
-        //console.log("Trenutni status ldr led-a: ", ledStatus);
+            //ldr led
+            get(child(dbRef, "test/led3")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    ledStatus = snapshot.val();
 
-        var imageElement = document.getElementById("light3");
-        if (ledStatus) {
-            imageElement.src = "img/light-on.png";
-        } else {
-            imageElement.src = "img/light-off.png";
+                    var imageElement = document.getElementById("light3");
+                    if (ledStatus) {
+                        imageElement.src = "img/light-on.png";
+                    } else {
+                        imageElement.src = "img/light-off.png";
+                    }
+                } else {
+                    console.log("Podaci o LED statusu ne postoje u bazi.");
+                }
+            }).catch((error) => {
+                console.error("Greška prilikom dohvatanja LED statusa: ", error);
+            });
+
+            //pir led
+            get(child(dbRef, "test/led2")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    var ledStatus2 = snapshot.val();
+
+                    var imageElement = document.getElementById("light1");
+                    if (ledStatus2) {
+                        imageElement.src = "img/light-on.png";
+                    } else {
+                        imageElement.src = "img/light-off.png";
+                    }
+                } else {
+                    console.log("Podaci o LED statusu ne postoje u bazi.");
+                }
+            }).catch((error) => {
+                console.error("Greška prilikom dohvatanja LED statusa: ", error);
+            });
+
+            //lone led
+            var ledStatus3 = false;
+
+            document.getElementById("light2").addEventListener("click", function () {
+                ledStatus3 = !ledStatus3;
+
+                const db = getDatabase();
+                set(ref(db, "test/led_status"), ledStatus3).then(() => {
+                    console.log("Status LED-a uspješno ažuriran.");
+                }).catch((error) => {
+                    console.error("Greška prilikom ažuriranja statusa LED-a: ", error);
+                });
+
+                var imageElement = document.getElementById("light2");
+                imageElement.src = ledStatus3 ? "img/light-on.png" : "img/light-off.png";
+            });
+
+            //mq2
+            get(child(dbRef, "test/gas_status")).then((snapshot) => {
+                if (snapshot.exists()) {
+                    var gasStatus = snapshot.val();
+                    var gasImage = document.getElementById("gas_img");
+                    if (gasStatus) {
+                        gasImage.style.display = "block";
+                    } else {
+                        gasImage.style.display = "none";
+                    }
+                } else {
+                    console.log("Gas status does not exist in the database");
+                }
+            }).catch((error) => {
+                console.error("Error getting gas status: ", error);
+            });
+
+
+
         }
-    } else {
-        console.log("Podaci o LED statusu ne postoje u bazi.");
-    }
-}).catch((error) => {
-    console.error("Greška prilikom dohvatanja LED statusa: ", error);
-});
-
-//pir led
-get(child(dbRef,"test/led2")).then((snapshot)=> {
-    if (snapshot.exists()) {
-        ledStatus = snapshot.val();
-        //console.log("Trenutni status pir led-a: ", ledStatus);
-
-        var imageElement = document.getElementById("light1");
-        if (ledStatus) {
-            imageElement.src = "img/light-on.png";
-        } else {
-            imageElement.src = "img/light-off.png";
-        }
-    } else {
-        console.log("Podaci o LED statusu ne postoje u bazi.");
-    }
-}).catch((error) => {
-    console.error("Greška prilikom dohvatanja LED statusa: ", error);
-});
-
-//lone led
-var ledStatus = false;
-
-document.getElementById("light2").addEventListener("click", function() {
-    ledStatus = !ledStatus;
-
-    const db = getDatabase();
-    set(ref(db, 'test/led_status'), ledStatus).then(() => {
-        console.log("Status LED-a uspješno ažuriran.");
-    }).catch((error) => {
-        console.error("Greška prilikom ažuriranja statusa LED-a: ", error);
-    });
-
-    var imageElement = document.getElementById("light2");
-    imageElement.src = ledStatus ? "img/light-on.png" : "img/light-off.png";
-});
-}
-
-    Load();
-    window.setInterval(Load, 1000);
-      </script>
+        Load();
+        window.setInterval(Load, 1000);
+    </script>
 
 </body>
+
 </html>
