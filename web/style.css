@@ -12,6 +12,7 @@
     background: rgba(76, 0, 130, 0.056);
     height: 930px;
 }
+
 .layout{
     width: 70%;
     margin-top: 60px;
@@ -23,11 +24,6 @@
     cursor: pointer;
     width: 200px;
 }
-
-/* #light1 {
-    top: 140px;
-    left: 570px;
-} */
 
 #light1 {
     top: 470px;
@@ -44,36 +40,27 @@
     left: 1200px;
 }
 
-@media screen and (max-width: 768px) and (orientation: landscape){
-    .house-layout {
-        position: relative;
-        width: 100%;
-    }
+#gas_img {
+    position: absolute;
+    top: 160px; 
+    left: 580px;
+    width: 165px;
+    height: 160px;
+    animation: blink-animation 1s infinite;
+}
 
-    /* .light {
-        position: absolute;
-        width: 100px;
-        height: 100px;
-        transition: opacity 0.3s ease;
-    } */
+@keyframes blink-animation {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
 
-    #light1 {
-        top: 50px;
-        left: 570px;
-    }
-    
-    #light2 {
-        top: 470px;
-        left: 570px;
-    }
-    
-    #light3 {
-        top: 170px;
-        left: 1200px;
-    }
-    
-    #light4 {
-        top: 500px;
-        left: 1200px;
-    }
+.blink-animation {
+    animation: blink-animation 1s infinite;
 }
