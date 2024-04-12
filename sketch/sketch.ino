@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #if defined(ESP32)
-  #include <WiFi.h>
+#include <WiFi.h>
 #elif defined(ESP8266)
-  #include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h>
 #endif
 #include <Firebase_ESP_Client.h>
 
@@ -13,8 +13,8 @@
 
 #define WIFI_SSID ""
 #define WIFI_PASSWORD ""
-#define API_KEY ""
-#define DATABASE_URL "" 
+#define API_KEY "AIzaSyA9lwJRqCEm7hWQAQf-ShCu0h6HgwAxqtA"
+#define DATABASE_URL "https://iot-project-5bbf5-default-rtdb.europe-west1.firebasedatabase.app/"
 
 FirebaseData fbdo;
 
@@ -31,7 +31,7 @@ bool signupOK = false;
 int buzzer = D2;
 int smokeA0 = A0;
 
-int motion_state = LOW; 
+int motion_state = LOW;
 int prev_motion_state = LOW;
 
 int sensorThres = 600;
@@ -63,21 +63,20 @@ void setup() {
   if (Firebase.signUp(&config, &auth, "", "")) {
     Serial.println("ok");
     signupOK = true;
-  }
-  else {
+  } else {
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
   /* Assign the callback function for the long running token generation task */
-  config.token_status_callback = tokenStatusCallback; //see addons/TokenHelper.h
+  config.token_status_callback = tokenStatusCallback;  //see addons/TokenHelper.h
 
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
 
   //pir
-  Serial.begin(9600);     
-  pinMode(PIR_PIN, INPUT); 
-  pinMode(LED_PIN, OUTPUT);  
+  Serial.begin(9600);
+  pinMode(PIR_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
 
   //mq2
   pinMode(buzzer, OUTPUT);
@@ -92,27 +91,26 @@ void setup() {
 
 void loop() {
 
-  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sendDataPrevMillis == 0)){
+  if (Firebase.ready() && signupOK && (millis() - sendDataPrevMillis > 1000 || sendDataPrevMillis == 0)) {
     sendDataPrevMillis = millis();
-     Serial.println("Checking LED status from Firebase");
-    if (Firebase.RTDB.getBool(&fbdo, "test/led_status")){
-      Serial.println("Got LED status from Firebase");
+
+    if (Firebase.RTDB.getBool(&fbdo, "test/led_status")) {
+
       if (fbdo.dataType() == "boolean") {
-            bool receivedStatus = fbdo.boolData();
-              Serial.print("Received LED status: ");
-            Serial.println(receivedStatus);
-            
-            if (receivedStatus) {
-                digitalWrite(LED_ALONE_PIN, HIGH); 
-            } else {
-                digitalWrite(LED_ALONE_PIN, LOW);
-            }
+        bool receivedStatus = fbdo.boolData();
+
+        Serial.println(receivedStatus);
+
+        if (receivedStatus) {
+          digitalWrite(LED_ALONE_PIN, HIGH);
+        } else {
+          digitalWrite(LED_ALONE_PIN, LOW);
         }
+      }
+    } else {
+      Serial.println("Error getting LED status: " + fbdo.errorReason());
     }
-    else {
-        Serial.println("Error getting LED status: " + fbdo.errorReason());
-    }
-    
+
     ledStatus = !ledStatus;
 
     bool led2Status = digitalRead(LED_PIN);
@@ -120,45 +118,50 @@ void loop() {
 
     Firebase.RTDB.setBool(&fbdo, "test/led2", led2Status);
     Firebase.RTDB.setBool(&fbdo, "test/led3", led3Status);
+    
+
+    //pir
+    prev_motion_state = motion_state;
+    motion_state = digitalRead(PIR_PIN);
+
+    if (motion_state == HIGH) {
+      digitalWrite(LED_PIN, HIGH);
+      delay(5000);
+    } else {
+      digitalWrite(LED_PIN, LOW);
+    }
+
+    //mq2
+    int analogSensor = analogRead(smokeA0);
+
+    Serial.print("Pin A0: ");
+    Serial.println(analogSensor);
+
+    if (analogSensor > sensorThres) {
+      if (Firebase.RTDB.setBool(&fbdo, "test/gas_status", true)) {
+        tone(buzzer, 1000, 200);
+      } else {
+        Serial.println("Error updating gas status in Firebase.");
+      }
+    } else {
+      if (Firebase.RTDB.setBool(&fbdo, "test/gas_status", false)) {
+        noTone(buzzer);
+      } else {
+        Serial.println("Error updating gas status in Firebase.");
+      }
+    }
+
+
+    //ldr
+    int light_state = digitalRead(DO_PIN);
+
+    if (light_state == HIGH) {
+      Serial.println("The light is NOT present");
+      digitalWrite(LDR_LED, HIGH);
+    } else {
+      Serial.println("The light is present");
+      digitalWrite(LDR_LED, LOW);
+    }
+
   }
-   
-  //pir
-  prev_motion_state = motion_state;  
-  motion_state = digitalRead(PIR_PIN); 
-
-  if (motion_state == HIGH) { 
-     Serial.println("Detektovan pokret! LED se pali");
-     digitalWrite(LED_PIN, HIGH);
-     delay(5000);
-   } else {
-     digitalWrite(LED_PIN, LOW);
-   }
-
-  //mq2
-  int analogSensor = analogRead(smokeA0);
-
-  Serial.print("Pin A0: ");
-  Serial.println(analogSensor);
-  // Checks if it has reached the threshold value
-  if (analogSensor > sensorThres) {
-    tone(buzzer, 1000, 200);
-  } else {
-    noTone(buzzer);
-  }
- 
-
-   //ldr
-   int light_state = digitalRead(DO_PIN);
-
-   if (light_state == HIGH){
-
-     Serial.println("The light is NOT present");
-     digitalWrite(LDR_LED, HIGH);
-   }
-   else{
-
-     Serial.println("The light is present");
-     digitalWrite(LDR_LED, LOW);
-   }
-  
 }
